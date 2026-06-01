@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeAxeResults } from './axe.js'
+import { normalizeAxeResults, filterForMode } from './axe.js'
 
 const makeViolation = (overrides = {}) => ({
   help: 'Image must have alternate text',
@@ -62,4 +62,22 @@ test('counts occurrences from nodes array length', () => {
 test('tags source as axe-core', () => {
   const result = normalizeAxeResults([makeViolation()])
   assert.equal(result[0].source, 'axe-core')
+})
+
+test('filterForMode keeps all violations in page mode', () => {
+  const violations = [{ id: 'html-has-lang' }, { id: 'image-alt' }, { id: 'document-title' }]
+  assert.equal(filterForMode(violations, 'page').length, 3)
+})
+
+test('filterForMode removes document-level rules in component mode', () => {
+  const violations = [{ id: 'html-has-lang' }, { id: 'image-alt' }, { id: 'document-title' }, { id: 'region' }]
+  const result = filterForMode(violations, 'component')
+  assert.equal(result.length, 1)
+  assert.equal(result[0].id, 'image-alt')
+})
+
+test('filterForMode removes all known document-level rule IDs in component mode', () => {
+  const docRules = ['html-has-lang', 'html-xml-lang-mismatch', 'document-title', 'page-has-heading-one', 'region', 'landmark-one-main', 'bypass']
+  const violations = docRules.map(id => ({ id }))
+  assert.equal(filterForMode(violations, 'component').length, 0)
 })

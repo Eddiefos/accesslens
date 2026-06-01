@@ -23,7 +23,7 @@ export async function runAudit({ url, html, mode = 'page', componentType = 'auto
 
     // Stage 2: axe-core
     emitter.emit('progress', { ...STEPS[1], status: 'active' })
-    const axeViolations = await runAxeOnPage(page)
+    const axeViolations = await runAxeOnPage(page, { mode })
     emitter.emit('progress', { ...STEPS[1], status: 'done', count: `${axeViolations.length} issues` })
 
     // Stage 3: Claude

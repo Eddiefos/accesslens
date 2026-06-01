@@ -1,8 +1,24 @@
 import { AxeBuilder } from '@axe-core/playwright'
 
-export async function runAxeOnPage(page) {
+// axe-core rule IDs that are document-level concerns — irrelevant for isolated components
+const DOCUMENT_LEVEL_RULES = new Set([
+  'html-has-lang',
+  'html-xml-lang-mismatch',
+  'document-title',
+  'page-has-heading-one',
+  'region',
+  'landmark-one-main',
+  'bypass',
+])
+
+export function filterForMode(violations, mode) {
+  if (mode !== 'component') return violations
+  return violations.filter(v => !DOCUMENT_LEVEL_RULES.has(v.id))
+}
+
+export async function runAxeOnPage(page, { mode = 'page' } = {}) {
   const results = await new AxeBuilder({ page }).analyze()
-  return normalizeAxeResults(results.violations)
+  return normalizeAxeResults(filterForMode(results.violations, mode))
 }
 
 export function normalizeAxeResults(violations) {
