@@ -17,13 +17,18 @@ function needLightInk(hex) {
 
 export default function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS)
-  const [phase, setPhase] = useState('input')   // 'input' | 'scan' | 'results'
+  const [phase, setPhase] = useState('input')        // 'input' | 'scan' | 'results'
   const [target, setTarget] = useState('')
   const [auditId, setAuditId] = useState(null)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [toast, setToast] = useState(null)
   const [tweaksOpen, setTweaksOpen] = useState(false)
+  // Re-run state
+  const [lastPayload, setLastPayload] = useState(null)
+  const [prevResult, setPrevResult] = useState(null)
+  const [isRerunning, setIsRerunning] = useState(false)
+  const [rerunAuditId, setRerunAuditId] = useState(null)
 
   useEffect(() => {
     const r = document.documentElement
@@ -38,17 +43,26 @@ export default function App() {
     window.__toastTimer = setTimeout(() => setToast(null), 1700)
   }
 
-  const run = async ({ display, url, html }) => {
+  const startAudit = async (payload) => {
+    const { url, html, mode = 'page', componentType = 'auto' } = payload
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(url ? { url, mode, componentType } : { html, mode, componentType }),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    const { id } = await res.json()
+    return id
+  }
+
+  const run = async ({ display, url, html, mode, componentType }) => {
     setTarget(display)
     setError(null)
+    const payload = { url, html, mode, componentType }
     try {
-      const res = await fetch('/api/audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(url ? { url } : { html }),
-      })
-      if (!res.ok) throw new Error(await res.text())
-      const { id } = await res.json()
+      const id = await startAudit(payload)
+      setLastPayload(payload)
+      setPrevResult(null)
       setAuditId(id)
       setPhase('scan')
     } catch (err) {
@@ -56,9 +70,29 @@ export default function App() {
     }
   }
 
+  const rerun = async () => {
+    if (!lastPayload) return
+    setError(null)
+    try {
+      const id = await startAudit(lastPayload)
+      setPrevResult(result)
+      setIsRerunning(true)
+      setRerunAuditId(id)
+    } catch (err) {
+      setError(err.message)
+      setIsRerunning(false)
+    }
+  }
+
   const handleResult = (data) => {
     setResult(data)
     setPhase('results')
+  }
+
+  const handleRerunDone = (data) => {
+    setResult(data)
+    setIsRerunning(false)
+    setRerunAuditId(null)
   }
 
   const handleError = (msg) => {
@@ -71,6 +105,10 @@ export default function App() {
     setResult(null)
     setAuditId(null)
     setError(null)
+    setPrevResult(null)
+    setIsRerunning(false)
+    setRerunAuditId(null)
+    setLastPayload(null)
   }
 
   return (
@@ -111,7 +149,17 @@ export default function App() {
         <ScanScreen auditId={auditId} target={target} onDone={handleResult} onError={handleError} />
       )}
       {phase === 'results' && result && (
-        <ResultsScreen data={result} target={target} onReset={reset} onCopy={copy} />
+        <ResultsScreen
+          data={result}
+          prevResult={prevResult}
+          isRerunning={isRerunning}
+          rerunAuditId={rerunAuditId}
+          target={target}
+          onReset={reset}
+          onCopy={copy}
+          onRerun={rerun}
+          onRerunDone={handleRerunDone}
+        />
       )}
 
       {toast && (
