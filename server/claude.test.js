@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { preprocessHtml } from './claude.js'
+import { preprocessHtml, resolveMode } from './claude.js'
 
 test('strips script tags and their content', () => {
   const html = '<body><script>alert(1)</script><p>hello</p></body>'
@@ -35,4 +35,24 @@ test('does not truncate html shorter than 15000 chars', () => {
   const html = '<p>short</p>'
   const result = preprocessHtml(html)
   assert.equal(result, html)
+})
+
+test('resolveMode returns page when mode is page regardless of content', () => {
+  assert.equal(resolveMode('<form></form>', 'page', 'auto'), 'page')
+})
+
+test('resolveMode returns component when mode is component with explicit type', () => {
+  assert.equal(resolveMode('<html><body></body></html>', 'component', 'form'), 'component')
+})
+
+test('resolveMode auto-detects page from html tag', () => {
+  assert.equal(resolveMode('<html><body><p>hi</p></body></html>', 'component', 'auto'), 'page')
+})
+
+test('resolveMode auto-detects page from body tag', () => {
+  assert.equal(resolveMode('<body><p>hi</p></body>', 'component', 'auto'), 'page')
+})
+
+test('resolveMode auto-detects component when no html/body tags', () => {
+  assert.equal(resolveMode('<form><input /></form>', 'component', 'auto'), 'component')
 })

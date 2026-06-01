@@ -9,7 +9,7 @@ const STEPS = [
   { step: 3, label: 'Claude semantic analysis' },
 ]
 
-export async function runAudit({ url, html }, emitter) {
+export async function runAudit({ url, html, mode = 'page', componentType = 'auto' }, emitter) {
   const browser = await createBrowser()
   const startTime = performance.now()
 
@@ -28,7 +28,7 @@ export async function runAudit({ url, html }, emitter) {
 
     // Stage 3: Claude
     emitter.emit('progress', { ...STEPS[2], status: 'active' })
-    const claudeRaw = await analyzeWithClaude(pageHtml)
+    const claudeRaw = await analyzeWithClaude(pageHtml, { mode, componentType })
     const claudeViolations = claudeRaw.map((v, i) => ({ ...v, id: `claude-${i}` }))
     emitter.emit('progress', { ...STEPS[2], status: 'done', count: `${claudeViolations.length} issues` })
 
