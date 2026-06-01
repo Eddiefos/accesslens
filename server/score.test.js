@@ -20,49 +20,24 @@ const makeViolation = (overrides = {}) => ({
 
 const baseCtx = { url: 'https://example.com', elementsScanned: 100, durationMs: 1000 }
 
-test('returns grade A and score 100 for zero violations', () => {
+test('returns Level AA conformance for zero violations', () => {
   const result = mergeAndScore([], [], baseCtx)
-  assert.equal(result.grade, 'A')
-  assert.equal(result.score, 100)
+  assert.equal(result.conformance, 'Level AA')
 })
 
-test('deducts 10 for each critical violation', () => {
-  const result = mergeAndScore([makeViolation({ severity: 'critical' })], [], baseCtx)
-  assert.equal(result.score, 90)
+test('returns Non-conformant when Level A critical violation present', () => {
+  const result = mergeAndScore([makeViolation({ level: 'A', severity: 'critical' })], [], baseCtx)
+  assert.equal(result.conformance, 'Non-conformant')
 })
 
-test('deducts 4 for each warning violation', () => {
-  const result = mergeAndScore([makeViolation({ severity: 'warning' })], [], baseCtx)
-  assert.equal(result.score, 96)
+test('returns Level A when only AA violations present', () => {
+  const result = mergeAndScore([makeViolation({ level: 'AA', severity: 'warning' })], [], baseCtx)
+  assert.equal(result.conformance, 'Level A')
 })
 
-test('deducts 1 for each info violation', () => {
-  const result = mergeAndScore([makeViolation({ severity: 'info' })], [], baseCtx)
-  assert.equal(result.score, 99)
-})
-
-test('score floors at 0', () => {
-  const violations = Array.from({ length: 15 }, (_, i) =>
-    makeViolation({ wcag: `1.1.${i}`, selector: `el-${i}` })
-  )
-  const result = mergeAndScore(violations, [], baseCtx)
-  assert.equal(result.score, 0)
-})
-
-test('grade C for score 60-74', () => {
-  const violations = Array.from({ length: 4 }, (_, i) =>
-    makeViolation({ wcag: `1.1.${i}`, selector: `el-${i}` })
-  )
-  const result = mergeAndScore(violations, [], baseCtx)
-  assert.equal(result.grade, 'C') // 100 - 40 = 60 → C
-})
-
-test('grade F for score below 40', () => {
-  const violations = Array.from({ length: 7 }, (_, i) =>
-    makeViolation({ wcag: `1.1.${i}`, selector: `el-${i}` })
-  )
-  const result = mergeAndScore(violations, [], baseCtx)
-  assert.equal(result.grade, 'F') // 100 - 70 = 30 → F
+test('returns Level AA when only info violations present', () => {
+  const result = mergeAndScore([makeViolation({ level: 'AA', severity: 'info' })], [], baseCtx)
+  assert.equal(result.conformance, 'Level AA')
 })
 
 test('deduplicates by wcag + selector, keeps axe entry', () => {

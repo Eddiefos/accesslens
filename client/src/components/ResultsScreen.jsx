@@ -132,10 +132,17 @@ export default function ResultsScreen({ data, target, onReset, onCopy }) {
 
       <div className="summary">
         <div className="score">
-          <span className="grade">{data.grade}</span>
+          <span className="grade" style={{
+            fontSize: data.conformance === 'Non-conformant' ? 28 : 38,
+            lineHeight: 1,
+            color: data.conformance === 'Level AA' ? 'var(--pass)'
+              : data.conformance === 'Level A' ? 'var(--warn)'
+              : 'var(--crit)',
+          }}>
+            {data.conformance === 'Non-conformant' ? 'Non-\nconformant' : data.conformance}
+          </span>
           <span className="num">
-            <span className="big">{data.score}<small>/100</small></span>
-            <span className="lbl">score</span>
+            <span className="lbl" style={{marginTop: 6}}>WCAG 2.1 conformance</span>
           </span>
         </div>
         <div className="vr"></div>

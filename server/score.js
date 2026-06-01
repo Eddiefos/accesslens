@@ -1,11 +1,8 @@
-const WEIGHTS = { critical: 10, warning: 4, info: 1 }
-const GRADES = [[90, 'A'], [75, 'B'], [60, 'C'], [40, 'D'], [0, 'F']]
 const WCAG_AA_CRITERIA = 50
 
 export function mergeAndScore(axeViolations, claudeViolations, { url, elementsScanned, durationMs }) {
   const violations = deduplicate(axeViolations, claudeViolations)
-  const score = computeScore(violations)
-  const grade = computeGrade(score)
+  const conformance = computeConformance(violations)
   const passed = Math.max(0, WCAG_AA_CRITERIA - violations.length)
 
   return {
@@ -13,8 +10,7 @@ export function mergeAndScore(axeViolations, claudeViolations, { url, elementsSc
     scannedAt: new Date().toISOString(),
     elementsScanned,
     durationMs,
-    grade,
-    score,
+    conformance,
     passed,
     violations,
   }
@@ -42,14 +38,13 @@ function deduplicate(axeViolations, claudeViolations) {
   return [...byKey.values()]
 }
 
-function computeScore(violations) {
-  const penalty = violations.reduce((sum, v) => sum + (WEIGHTS[v.severity] ?? 0), 0)
-  return Math.max(0, 100 - penalty)
-}
-
-function computeGrade(score) {
-  for (const [threshold, grade] of GRADES) {
-    if (score >= threshold) return grade
-  }
-  return 'F'
+// WCAG conformance is pass/fail per level, not a numeric score.
+// "AA" = no Level A or AA failures. "A" = no Level A failures but some AA.
+// "Non-conformant" = at least one Level A failure.
+function computeConformance(violations) {
+  const hasLevelA = violations.some((v) => v.level === 'A' && v.severity === 'critical')
+  const hasLevelAA = violations.some((v) => v.level === 'AA' && v.severity !== 'info')
+  if (hasLevelA) return 'Non-conformant'
+  if (hasLevelAA) return 'Level A'
+  return 'Level AA'
 }
