@@ -357,4 +357,55 @@ a{color:inherit}
 [data-density="compact"] .summary{padding:20px 24px}
 [data-density="comfy"] .vhead{padding:20px 22px 20px 24px}
 [data-density="comfy"] .vlist{gap:14px}
+
+/* ============================================================
+   DEV WORKFLOW ADDITIONS
+   ============================================================ */
+
+/* Mode toggle (Page | Component) inside console-head */
+.mode-toggle{display:flex;gap:2px;background:var(--ink-0);border:1px solid var(--line);border-radius:var(--r-1);padding:2px;margin-left:auto}
+.mode-btn{font-family:var(--font-mono);font-size:12px;color:var(--fg-3);padding:4px 12px;border-radius:var(--r-1);display:flex;align-items:center;gap:5px;transition:color 140ms var(--ease),background 140ms var(--ease)}
+.mode-btn.active{background:var(--ink-2);color:var(--fg)}
+
+/* Secondary tab bar shown in page mode */
+.console-tabs-bar{display:flex;padding:0 14px;border-bottom:1px solid var(--line);background:var(--ink-1)}
+
+/* Recent localhost URL pills */
+.recent-urls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.recent-url{font-family:var(--font-mono);font-size:12px;color:var(--fg-3);background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r-1);padding:3px 10px;display:flex;align-items:center;gap:6px;transition:all 140ms var(--ease)}
+.recent-url:hover{color:var(--fg-2);border-color:var(--line-2)}
+.recent-url .arr{color:var(--accent)}
+
+/* Component type context chips */
+.context-chips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line)}
+.context-chip{font-family:var(--font-mono);font-size:12px;color:var(--fg-3);background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r-full);padding:4px 12px;transition:all 140ms var(--ease)}
+.context-chip:hover{color:var(--fg-2);border-color:var(--line-2)}
+.context-chip.active{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}
+
+/* Rerun bar shown during inline re-run */
+.rerun-bar{display:flex;align-items:center;gap:10px;padding:8px 18px;background:var(--ink-1);border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12px;color:var(--fg-3)}
+.rerun-spinner{width:12px;height:12px;border:1.5px solid var(--line-2);border-top-color:var(--accent);border-radius:var(--r-full);animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Diff badges on violation cards */
+.diff-tag{font-family:var(--font-mono);font-size:10px;padding:1px 7px;border-radius:var(--r-full);flex-shrink:0}
+.diff-tag.new{background:var(--crit-dim);color:var(--crit)}
+.diff-tag.fixed{background:var(--pass-dim);color:var(--pass)}
+.diff-tag.unchanged{color:var(--fg-3)}
+.vcard.s-fixed::before{background:var(--pass)}
+.vcard.s-fixed .vtitle{text-decoration:line-through;color:var(--fg-3)}
+
+/* Diff summary line in summary banner */
+.diff-summary{display:flex;gap:12px;font-family:var(--font-mono);font-size:11px}
+.diff-summary .ds-fixed{color:var(--pass)}
+.diff-summary .ds-new{color:var(--crit)}
+.diff-summary .ds-unchanged{color:var(--fg-3)}
+
+/* Export dropdown */
+.export-wrap{position:relative}
+.export-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--ink-2);border:1px solid var(--line-2);border-radius:var(--r-2);padding:6px;z-index:50;min-width:210px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.export-opt{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:var(--r-1);font-family:var(--font-mono);font-size:12px;color:var(--fg-2);transition:all 140ms var(--ease);text-align:left;width:100%;background:none;border:none}
+.export-opt:hover{background:var(--ink-3);color:var(--fg)}
+.export-opt .opt-icon{color:var(--fg-3);flex-shrink:0;margin-top:1px}
+.export-opt .opt-sub{display:block;font-size:10px;color:var(--fg-3);margin-top:2px}
 [data-density="comfy"] .summary{padding:34px 38px}

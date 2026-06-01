@@ -1,21 +1,50 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import * as Ic from './Icons.jsx'
 import { EXAMPLES } from '../data.js'
 
+const RECENT_KEY = 'accesslens-recent-urls'
+const MODE_KEY = 'accesslens-mode'
+const MAX_RECENT = 5
+
+function loadRecent() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]') } catch { return [] }
+}
+
+function saveRecent(url, prev) {
+  const next = [url, ...prev.filter(u => u !== url)].slice(0, MAX_RECENT)
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)) } catch {}
+  return next
+}
+
 export default function InputScreen({ onRun }) {
+  const [mode, setMode] = useState(() => localStorage.getItem(MODE_KEY) ?? 'page')
   const [tab, setTab] = useState('url')
   const [url, setUrl] = useState('')
   const [html, setHtml] = useState('')
   const [focus, setFocus] = useState(false)
+  const [componentType, setComponentType] = useState('auto')
+  const [recentUrls, setRecentUrls] = useState(loadRecent)
 
-  const filled = tab === 'url' ? url.trim().length > 0 : html.trim().length > 0
+  useEffect(() => {
+    localStorage.setItem(MODE_KEY, mode)
+  }, [mode])
+
+  const filled = mode === 'component'
+    ? html.trim().length > 0
+    : tab === 'url' ? url.trim().length > 0 : html.trim().length > 0
 
   const run = () => {
     if (!filled) return
-    if (tab === 'url') {
-      onRun({ display: `https://${url}`, url: `https://${url}` })
+    if (mode === 'page' && tab === 'url') {
+      const full = `https://${url}`
+      if (url.includes('localhost') || url.includes('127.0.0.1')) {
+        setRecentUrls(prev => saveRecent(full, prev))
+      }
+      onRun({ display: full, url: full, mode: 'page', componentType: 'auto' })
+    } else if (mode === 'page' && tab === 'html') {
+      onRun({ display: 'Pasted full-page HTML', html, mode: 'page', componentType: 'auto' })
     } else {
-      onRun({ display: 'Pasted HTML snippet', html })
+      onRun({ display: 'Component snippet', html, mode: 'component', componentType })
     }
   }
 
@@ -38,20 +67,50 @@ export default function InputScreen({ onRun }) {
       </div>
 
       <div className="console" onKeyDown={onKey}>
+        {/* Primary: mode toggle */}
         <div className="console-head">
           <div className="tracffic"><i></i><i></i><i></i></div>
-          <div className="tabs">
-            <button className={'tab' + (tab === 'url' ? ' active' : '')} onClick={() => setTab('url')}>
-              <span className="glyph"><Ic.Link size={14} /></span> Enter URL
+          <div className="mode-toggle">
+            <button className={'mode-btn' + (mode === 'page' ? ' active' : '')} onClick={() => setMode('page')}>
+              <Ic.Link size={12} /> Page
             </button>
-            <button className={'tab' + (tab === 'html' ? ' active' : '')} onClick={() => setTab('html')}>
-              <span className="glyph"><Ic.Code size={14} /></span> Paste HTML
+            <button className={'mode-btn' + (mode === 'component' ? ' active' : '')} onClick={() => setMode('component')}>
+              <Ic.Code size={12} /> Component
             </button>
           </div>
         </div>
 
+        {/* Secondary: tabs row (page mode only) */}
+        {mode === 'page' && (
+          <div className="console-tabs-bar">
+            <div className="tabs">
+              <button className={'tab' + (tab === 'url' ? ' active' : '')} onClick={() => setTab('url')}>
+                <span className="glyph"><Ic.Link size={14} /></span> URL
+              </button>
+              <button className={'tab' + (tab === 'html' ? ' active' : '')} onClick={() => setTab('html')}>
+                <span className="glyph"><Ic.Code size={14} /></span> Full page HTML
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Context chips (component mode only) */}
+        {mode === 'component' && (
+          <div className="context-chips">
+            {['auto', 'form', 'nav', 'modal', 'card', 'button'].map(type => (
+              <button
+                key={type}
+                className={'context-chip' + (componentType === type ? ' active' : '')}
+                onClick={() => setComponentType(type)}
+              >
+                {type === 'auto' ? 'Auto-detect' : type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="console-body">
-          {tab === 'url' ? (
+          {mode === 'page' && tab === 'url' && (
             <div className={'field-url' + (focus ? ' focus' : '')}>
               <span className="scheme">https://</span>
               <input
@@ -60,21 +119,25 @@ export default function InputScreen({ onRun }) {
                 onChange={(e) => setUrl(e.target.value.replace(/^https?:\/\//, ''))}
                 onFocus={() => setFocus(true)}
                 onBlur={() => setFocus(false)}
-                placeholder="acme-store.no/checkout"
+                placeholder="localhost:3000/checkout"
                 spellCheck={false}
                 autoCapitalize="off"
                 autoCorrect="off"
               />
             </div>
-          ) : (
+          )}
+          {(mode === 'component' || (mode === 'page' && tab === 'html')) && (
             <div className="field-html">
               <div className="gutter">
                 {Array.from({ length: lineCount }, (_, i) => <div key={i}>{i + 1}</div>)}
               </div>
               <textarea
+                autoFocus={mode === 'component'}
                 value={html}
                 onChange={(e) => setHtml(e.target.value)}
-                placeholder={'<section class="hero">\n  <img src="/banner.jpg">\n  <button class="cta"><svg/></button>\n</section>'}
+                placeholder={mode === 'component'
+                  ? '<form>\n  <input placeholder="Email" />\n  <button>Submit</button>\n</form>'
+                  : '<html>\n  <head><title>…</title></head>\n  <body>…</body>\n</html>'}
                 spellCheck={false}
               />
             </div>
@@ -96,7 +159,23 @@ export default function InputScreen({ onRun }) {
         <span className="chip"><span className="led"></span>DOM + computed styles</span>
       </div>
 
-      {tab === 'url' && (
+      {/* Recent localhost URLs (page + URL tab only) */}
+      {mode === 'page' && tab === 'url' && recentUrls.length > 0 && (
+        <div className="examples">
+          <div className="lbl">Recent local</div>
+          <div className="recent-urls">
+            {recentUrls.map(u => (
+              <button key={u} className="recent-url"
+                onClick={() => setUrl(u.replace(/^https?:\/\//, ''))}>
+                <span className="arr">↳</span>{u.replace('https://', '')}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sample targets (page + URL tab, no recent urls yet) */}
+      {mode === 'page' && tab === 'url' && recentUrls.length === 0 && (
         <div className="examples">
           <div className="lbl">Try a sample target</div>
           <div className="row">
