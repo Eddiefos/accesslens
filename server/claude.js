@@ -75,7 +75,7 @@ export async function analyzeWithClaude(html, { mode = 'page', componentType = '
     ? `\n\n${COMPONENT_TYPE_HINTS[componentType]}`
     : ''
 
-  const message = await getClient().messages.create({
+  const request = {
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
@@ -83,7 +83,22 @@ export async function analyzeWithClaude(html, { mode = 'page', componentType = '
       role: 'user',
       content: `Audit this HTML for WCAG 2.1 accessibility issues that axe-core misses. Return only the JSON array.${typeHint}\n\n${preprocessed}`,
     }],
-  })
+  }
+
+  let message
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      message = await getClient().messages.create(request)
+      break
+    } catch (err) {
+      const isOverloaded = err?.status === 529 || err?.error?.type === 'overloaded_error'
+      if (isOverloaded && attempt < 2) {
+        await new Promise(r => setTimeout(r, (attempt + 1) * 8_000))
+        continue
+      }
+      throw err
+    }
+  }
 
   const text = message.content.find((b) => b.type === 'text')?.text ?? '[]'
   try {
