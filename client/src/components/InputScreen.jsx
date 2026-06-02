@@ -16,13 +16,13 @@ function saveRecent(url, prev) {
   return next
 }
 
-export default function InputScreen({ onRun }) {
-  const [mode, setMode] = useState(() => localStorage.getItem(MODE_KEY) ?? 'page')
-  const [tab, setTab] = useState('url')
-  const [url, setUrl] = useState('')
-  const [html, setHtml] = useState('')
+export default function InputScreen({ onRun, initialPayload }) {
+  const [mode, setMode] = useState(() => initialPayload?.mode ?? localStorage.getItem(MODE_KEY) ?? 'page')
+  const [tab, setTab] = useState(() => initialPayload?.url ? 'url' : 'html')
+  const [url, setUrl] = useState(() => initialPayload?.url?.replace(/^https?:\/\//, '') ?? '')
+  const [html, setHtml] = useState(() => initialPayload?.html ?? '')
   const [focus, setFocus] = useState(false)
-  const [componentType, setComponentType] = useState('auto')
+  const [componentType, setComponentType] = useState(() => initialPayload?.componentType ?? 'auto')
   const [recentUrls, setRecentUrls] = useState(loadRecent)
 
   useEffect(() => {

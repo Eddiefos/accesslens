@@ -114,7 +114,7 @@ function ViolationCard({ v, open, onToggle, onCopy }) {
   )
 }
 
-export default function ResultsScreen({ data, prevResult, isRerunning, rerunAuditId, target, onReset, onCopy, onRerun, onRerunDone }) {
+export default function ResultsScreen({ data, prevResult, isRerunning, rerunAuditId, target, onReset, onCopy, onRerun, onRerunDone, onEditAndRerun }) {
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('severity')
   const [openIds, setOpenIds] = useState(() => new Set([data.violations[0]?.id].filter(Boolean)))
@@ -182,6 +182,12 @@ export default function ResultsScreen({ data, prevResult, isRerunning, rerunAudi
         <button className="back" onClick={onReset}><Ic.Back size={14} /> new audit</button>
         <span className="url"><span className="led"></span>{target}</span>
         <span className="spacer"></span>
+        {onEditAndRerun && (
+          <button className="btn btn-ghost" style={{ padding: '9px 16px', fontSize: 13 }}
+                  onClick={onEditAndRerun} disabled={isRerunning}>
+            <Ic.Code size={13} /> Edit & re-run
+          </button>
+        )}
         <button className="btn btn-ghost" style={{ padding: '9px 16px', fontSize: 13 }}
                 onClick={onRerun} disabled={isRerunning}>
           <Ic.Refresh size={13} /> {isRerunning ? 'Running…' : 'Re-run'}

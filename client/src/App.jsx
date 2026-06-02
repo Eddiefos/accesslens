@@ -29,6 +29,8 @@ export default function App() {
   const [prevResult, setPrevResult] = useState(null)
   const [isRerunning, setIsRerunning] = useState(false)
   const [rerunAuditId, setRerunAuditId] = useState(null)
+  // Edit & re-run: stores result to diff against after editing the snippet
+  const [editRerunPrevResult, setEditRerunPrevResult] = useState(null)
 
   useEffect(() => {
     const r = document.documentElement
@@ -62,12 +64,19 @@ export default function App() {
     try {
       const id = await startAudit(payload)
       setLastPayload(payload)
-      setPrevResult(null)
+      setPrevResult(editRerunPrevResult)   // null on fresh run, saved result on edit-rerun
+      setEditRerunPrevResult(null)
       setAuditId(id)
       setPhase('scan')
     } catch (err) {
       setError(err.message)
+      setEditRerunPrevResult(null)
     }
+  }
+
+  const editAndRerun = () => {
+    setEditRerunPrevResult(result)   // save current result for diff
+    setPhase('input')                // go back to input with HTML pre-populated
   }
 
   const rerun = async () => {
@@ -109,6 +118,7 @@ export default function App() {
     setIsRerunning(false)
     setRerunAuditId(null)
     setLastPayload(null)
+    setEditRerunPrevResult(null)
   }
 
   return (
@@ -144,7 +154,7 @@ export default function App() {
         </div>
       )}
 
-      {phase === 'input' && <InputScreen onRun={run} />}
+      {phase === 'input' && <InputScreen onRun={run} initialPayload={editRerunPrevResult ? lastPayload : null} />}
       {phase === 'scan' && auditId && (
         <ScanScreen auditId={auditId} target={target} onDone={handleResult} onError={handleError} />
       )}
@@ -159,6 +169,7 @@ export default function App() {
           onCopy={copy}
           onRerun={rerun}
           onRerunDone={handleRerunDone}
+          onEditAndRerun={editAndRerun}
         />
       )}
 
