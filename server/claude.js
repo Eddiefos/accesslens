@@ -67,7 +67,12 @@ export function resolveMode(html, mode, componentType) {
   return /<html[\s>]/i.test(html) || /<body[\s>]/i.test(html) ? 'page' : 'component'
 }
 
-export async function analyzeWithClaude(html, { mode = 'page', componentType = 'auto' } = {}) {
+const MODEL_IDS = {
+  sonnet: 'claude-sonnet-4-6',
+  haiku: 'claude-haiku-4-5-20251001',
+}
+
+export async function analyzeWithClaude(html, { mode = 'page', componentType = 'auto', model = 'sonnet' } = {}) {
   const preprocessed = preprocessHtml(html)
   const resolved = resolveMode(html, mode, componentType)
   const systemPrompt = resolved === 'component' ? COMPONENT_SYSTEM_PROMPT : PAGE_SYSTEM_PROMPT
@@ -76,7 +81,7 @@ export async function analyzeWithClaude(html, { mode = 'page', componentType = '
     : ''
 
   const request = {
-    model: 'claude-sonnet-4-6',
+    model: MODEL_IDS[model] ?? MODEL_IDS.sonnet,
     max_tokens: 4096,
     system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
     messages: [{

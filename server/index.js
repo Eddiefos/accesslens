@@ -14,7 +14,7 @@ app.use(express.json())
 const jobs = new Map()
 
 app.post('/api/audit', async (req, res) => {
-  const { url, html, mode = 'page', componentType = 'auto' } = req.body ?? {}
+  const { url, html, mode = 'page', componentType = 'auto', model = 'sonnet' } = req.body ?? {}
   if (!url && !html) {
     return res.status(400).json({ error: 'url or html required' })
   }
@@ -25,7 +25,7 @@ app.post('/api/audit', async (req, res) => {
   emitter.on('error', () => {})
   jobs.set(id, emitter)
 
-  runAudit({ url, html, mode, componentType }, emitter).catch((err) => {
+  runAudit({ url, html, mode, componentType, model }, emitter).catch((err) => {
     emitter.emit('error', err.message)
   }).finally(() => {
     setTimeout(() => jobs.delete(id), 60_000)
